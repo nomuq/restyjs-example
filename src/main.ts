@@ -1,16 +1,30 @@
-import resty, { Controller, Get, Context } from "@restyjs/core";
+import resty, {
+  NotFoundErrorHandler,
+  DefaultErrorHandler,
+} from "@restyjs/core";
+import { JWTConfiguration } from "@restyjs/jwt";
+import { Database } from "@restyjs/typeorm";
 
-@Controller("/hello")
-class HelloController {
+import { errors } from "celebrate";
 
-  @Get("/")
-  index() {
-    return "Hello World";
-  }
-}
+import { AuthController } from "./controllers/AuthController";
+import { User } from "./models/User";
 
 const app = resty({
-  controllers: [HelloController],
+  routePrefix: "/api",
+  controllers: [AuthController],
+  providers: [
+    JWTConfiguration("secret"),
+    Database({
+      type: "sqlite",
+      database: "example.db",
+      synchronize: true,
+      entities: [User],
+    }),
+  ],
+  postMiddlewares: [errors(), NotFoundErrorHandler, DefaultErrorHandler],
 });
 
-app.listen(8080);
+app.listen(8080, () => {
+  console.log("server is listening on port 8080");
+});
